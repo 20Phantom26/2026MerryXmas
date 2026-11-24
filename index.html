@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Merry Christmas - A Night Full of Light and Miracles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,400&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #02040a;
+            font-family: 'Noto Serif TC', 'Cormorant Garamond', serif;
+        }
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            touch-action: none;
+        }
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+        .font-serif-tc {
+            font-family: 'Noto Serif TC', 'Cormorant Garamond', serif;
+        }
+
+        /* 開場全黑遮罩與文字光暈 */
+        #intro-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: radial-gradient(circle at 50% 45%, #071024 0%, #020409 75%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 1.3s cubic-bezier(0.22, 1, 0.36, 1), visibility 1.3s ease;
+        }
+        #intro-overlay.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .title-shimmer {
+            background: linear-gradient(120deg, #e2e8f0 0%, #ffffff 30%, #fde68a 55%, #bae6fd 80%, #ffffff 100%);
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmerText 4.5s linear infinite;
+            text-shadow: 0 0 28px rgba(186, 230, 253, 0.25);
+        }
+        @keyframes shimmerText {
+            to { background-position: 220% center; }
+        }
+        .pulse-hint {
+            animation: pulseOpacity 2.4s ease-in-out infinite;
+        }
+        @keyframes pulseOpacity {
+            0%, 100% { opacity: 0.45; transform: translateY(0px); }
+            50% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        /* 信封動畫樣式 */
+        #envelope-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background: rgba(2, 6, 18, 0.78);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s ease;
+        }
+        #envelope-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .envelope-stage {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            perspective: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(145deg, #16243e 0%, #0d1629 100%);
+            border-radius: 14px;
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(253, 224, 71, 0.28);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
+        }
+        .envelope-wrapper.opened {
+            transform: translateY(95px) scale(0.92);
+        }
+        /* 信封上蓋 */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 135px;
+            background: linear-gradient(180deg, #1e3257 0%, #13213b 100%);
+            clip-path: polygon(0 0, 50% 92%, 100% 0);
+            transform-origin: top center;
+            transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.2s;
+            z-index: 5;
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+        }
+        .envelope-wrapper.opened .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+        /* 信封左右與底部口袋折線 */
+        .envelope-pocket {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            border-radius: 14px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .envelope-pocket::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(30, 48, 82, 0.92) 50%, transparent 50.5%);
+        }
+        .envelope-pocket::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(225deg, rgba(24, 39, 68, 0.96) 50%, transparent 50.5%);
+        }
+        .envelope-bottom {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            background: linear-gradient(0deg, #192947 0%, #111d33 100%);
+            clip-path: polygon(0 100%, 50% 44%, 100% 100%);
+            border-bottom-left-radius: 14px;
+            border-bottom-right-radius: 14px;
+            pointer-events: none;
+        }
+        /* 火漆印章 */
+        .wax-seal {
+            position: absolute;
+            top: 104px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 58px;
+            height: 58px;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 35% 30%, #ef4444 0%, #b91c1c 60%, #7f1d1d 100%);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 200, 200, 0.45), 0 0 0 3px rgba(253, 224, 71, 0.4);
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.35s ease, opacity 0.35s ease;
+        }
+        .wax-seal:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+        }
+        .envelope-wrapper.opened .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.4);
+            pointer-events: none;
+        }
+        /* 抽出的祝福信紙 */
+        .letter-card {
+            position: relative;
+            z-index: 3;
+            width: 92%;
+            background: linear-gradient(165deg, #fffdf7 0%, #f7f1e3 100%);
+            color: #1e293b;
+            border-radius: 14px;
+            padding: 24px 22px 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(180, 140, 60, 0.35);
+            transform: translateY(45px) scale(0.88);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s, opacity 0.55s ease 0.25s;
+            margin-top: -215px;
+        }
+        .envelope-wrapper.opened + .letter-card {
+            transform: translateY(-45px) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* 浮動提示膠囊 */
+        .glass-pill {
+            background: rgba(9, 17, 36, 0.68);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(186, 230, 253, 0.22);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
+
+        /* 自訂通知 Toast */
+        #toast-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, -120%);
+            z-index: 60;
+            transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        #toast-box.show {
+            transform: translate(-50%, 0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 開場全黑奇蹟畫面 -->
+    <div id="intro-overlay" role="button" tabindex="0" aria-label="輕觸螢幕進入聖誕夜">
+        <div class="text-center px-6 max-w-xl select-none">
+            <div class="inline-block mb-3 text-amber-300/80 tracking-[0.35em] text-xs uppercase font-cinzel">
+                ✦ Winter Miracle ✦
+            </div>
+            <h1 class="font-cinzel text-4xl sm:text-6xl font-bold tracking-wider title-shimmer mb-3">
+                Merry Christmas
+            </h1>
+            <p class="font-serif-tc italic text-sky-200/85 text-base sm:text-xl tracking-widest mb-10">
+                A night full of light and miracles
+            </p>
+            <div class="pulse-hint inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-sky-200/25 bg-white/5 text-sky-100/90 text-xs sm:text-sm tracking-widest">
+                <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
+                <span>輕觸螢幕開啟奇蹟 · Tap anywhere to begin</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D WebGL 畫布容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 頂部狀態與提示列 (螺旋生成完成後淡入) -->
+    <div id="hud-container" class="fixed inset-x-0 bottom-5 z-20 flex flex-col items-center gap-2.5 px-4 pointer-events-none opacity-0 transition-opacity duration-1000">
+        <div class="glass-pill px-4 py-2 rounded-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs sm:text-sm text-sky-100/90 pointer-events-auto">
+            <button id="btn-summon-santa" class="flex items-center gap-1.5 hover:text-amber-300 transition-colors py-1 px-2 rounded-lg active:scale-95">
+                <span>🎄</span>
+                <span>點擊聖誕樹召喚馴鹿雪橇</span>
+            </button>
+            <span class="text-sky-400/40 hidden sm:inline">|</span>
+            <button id="btn-open-star" class="flex items-center gap-1.5 hover:text-amber-300 transition-colors py-1 px-2 rounded-lg active:scale-95">
+                <span>⭐</span>
+                <span>點擊樹頂星星拆祝福信封</span>
+            </button>
+            <span class="text-sky-400/40 hidden sm:inline">|</span>
+            <span class="flex items-center gap-1 text-amber-200/85 py-1 px-1">
+                <span>🎁</span>
+                <span>點擊落地禮物放煙火</span>
+            </span>
+        </div>
+        <p class="text-[11px] text-sky-200/50 tracking-wider">單指旋轉視角 · 雙指縮放觀賞</p>
+    </div>
+
+    <!-- 頂部通知 Toast -->
+    <div id="toast-box" class="glass-pill px-5 py-2.5 rounded-full text-xs sm:text-sm text-amber-200 font-medium flex items-center gap-2 shadow-2xl">
+        <span>✨</span>
+        <span id="toast-text">祝福圖卡已自動保存至您的設備！</span>
+    </div>
+
+    <!-- 火漆信封祝福互動彈窗 -->
+    <div id="envelope-modal">
+        <div class="envelope-stage">
+            <!-- 信封本體 -->
+            <div id="envelope-box" class="envelope-wrapper">
+                <div class="envelope-flap"></div>
+                <div class="envelope-pocket"></div>
+                <div class="envelope-bottom"></div>
+                <div id="wax-seal-btn" class="wax-seal" title="點擊拆開火漆信封">
+                    <svg class="w-7 h-7 text-amber-200 drop-shadow" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L14.8 8.5L22 9.3L16.5 14L18.2 21L12 17.3L5.8 21L7.5 14L2 9.3L9.2 8.5L12 2Z"/>
+                    </svg>
+                </div>
+                <div class="absolute bottom-4 inset-x-0 text-center z-10 pointer-events-none">
+                    <span class="text-[11px] tracking-[0.25em] text-amber-200/75 font-cinzel uppercase">Tap Seal to Open · 點擊火漆拆信</span>
+                </div>
+            </div>
+
+            <!-- 展開的祝福卡片 -->
+            <div id="letter-card" class="letter-card">
+                <div class="border border-amber-600/30 rounded-xl p-4 sm:p-5 relative bg-white/60">
+                    <!-- 角落裝飾星芒 -->
+                    <div class="flex items-center justify-between text-amber-700/70 text-xs font-cinzel tracking-widest mb-3">
+                        <span>✦ STARLIGHT BLESSING</span>
+                        <span id="blessing-lang-tag" class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px]">BLESSING</span>
+                    </div>
+
+                    <div class="my-4 min-h-[115px] flex flex-col justify-center items-center text-center">
+                        <p id="blessing-main-text" class="text-base sm:text-lg leading-relaxed font-semibold text-slate-800 tracking-wide">
+                            願那位降生在馬槽裡的和平之君，將屬天的平安與喜樂深深澆灌在你心裡，照亮你前方的每一步。
+                        </p>
+                        <p id="blessing-sub-text" class="mt-3 text-xs text-amber-800/75 italic font-cinzel">
+                            — Grace, Peace &amp; Starlight —
+                        </p>
+                    </div>
+
+                    <!-- 兩個選擇按鈕 -->
+                    <div class="mt-5 pt-3 border-t border-amber-900/10 flex flex-col sm:flex-row gap-2.5">
+                        <button id="btn-accept-blessing" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-700 text-white font-semibold text-xs sm:text-sm shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                            <span>📥</span>
+                            <span>收下祝福 (自動保存圖卡)</span>
+                        </button>
+                        <button id="btn-next-blessing" class="py-2.5 px-4 rounded-xl bg-slate-800/10 hover:bg-slate-800/20 text-slate-700 font-medium text-xs sm:text-sm active:scale-95 transition-all">
+                            再抽一封 / 關閉
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js 與後處理模組 (使用穩定 CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ==========================================
+        // 1. 祝福語資料庫 (50% 中文 / 50% 英文，融合平安喜樂與適度基督信仰元素)
+        // ==========================================
+        const BLESSINGS = [
+            // 中文祝福 (6則)
+            {
+                lang: 'ZH',
+                tag: '平安與喜樂',
+                text: '願伯利恆的星光照亮你的黑夜，願耶穌所賜的平安與喜樂常駐你心，使你在新的一年滿有盼望與力量。',
+                sub: '以馬內利 · 神與我們同在'
+            },
+            {
+                lang: 'ZH',
+                tag: '信實與恩典',
+                text: '在這個充滿奇蹟的聖誕夜，願主的信實如星辰永不改變，願恩典與和平環繞你和你的家人，歲歲年年。',
+                sub: '平安夜的奇蹟祝福'
+            },
+            {
+                lang: 'ZH',
+                tag: '和平與盼望',
+                text: '願那位降生帶來和平的救主，擦去一切疲憊與憂慮，將出人意外的平安與豐盛喜樂賞賜給你。',
+                sub: 'Peace & Joy in Christmas'
+            },
+            {
+                lang: 'ZH',
+                tag: '星光與祝福',
+                text: '願聖誕樹上的每一道微光，都化作對你最深的祝福：心中有愛、腳步有光、生活滿溢信實與溫暖。',
+                sub: 'A Night Full of Light'
+            },
+            {
+                lang: 'ZH',
+                tag: '恩慈與良善',
+                text: '願聖誕的鐘聲為你帶來從天而來的喜樂與平靜，願你在每一個平凡日子裡，都看見神為你預備的美好奇蹟。',
+                sub: 'Blessings of Grace'
+            },
+            {
+                lang: 'ZH',
+                tag: '溫暖與守護',
+                text: '願真光驅散寒冬的冷冽，願愛與和平在你的生命中生根發芽，祝你擁有一個充滿感恩與喜樂的聖誕節！',
+                sub: 'Merry Christmas & Happy New Year'
+            },
+            // 英文祝福 (6則)
+            {
+                lang: 'EN',
+                tag: 'PEACE & JOY',
+                text: 'May the timeless light of Jesus fill your heart with deep peace, unshakable hope, and overflowing joy this Christmas night.',
+                sub: 'Emmanuel — God With Us'
+            },
+            {
+                lang: 'EN',
+                tag: 'FAITHFULNESS',
+                text: 'Under this starry winter sky, may you feel the warmth of God’s faithfulness and the quiet miracle of His grace guiding every step.',
+                sub: 'A Night Full of Light and Miracles'
+            },
+            {
+                lang: 'EN',
+                tag: 'HEAVENLY PEACE',
+                text: 'May the Prince of Peace bring calm to your soul, brightness to your home, and abundant blessings to everyone you hold dear.',
+                sub: 'Silent Night, Holy Night'
+            },
+            {
+                lang: 'EN',
+                tag: 'GRACE & LIGHT',
+                text: 'Just as the star guided the wise men, may Christ’s gentle light lead you into a year filled with love, faithfulness, and true joy.',
+                sub: 'Starlight Blessings'
+            },
+            {
+                lang: 'EN',
+                tag: 'HOPE & LOVE',
+                text: 'Wishing you a season wrapped in wonder, grounded in faith, and crowned with the peace that surpasses all understanding.',
+                sub: 'Merry Christmas'
+            },
+            {
+                lang: 'EN',
+                tag: 'MIRACLE NIGHT',
+                text: 'May the joy of our Savior’s birth renew your spirit and fill your days with kindness, harmony, and radiant hope.',
+                sub: 'Joy to the World'
+            }
+        ];
+
+        let currentBlessing = BLESSINGS[0];
+
+        // ==========================================
+        // 2. 音效合成器 (Web Audio API 輕柔風鈴與聖誕鐘聲，無外部音檔依賴)
+        // ==========================================
+        let audioCtx = null;
+        function initAudio() {
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) audioCtx = new AudioContext();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {
+                // 忽略不支援音效的環境
+            }
+        }
+
+        function playMagicChime(notes = [523.25, 659.25, 783.99, 1046.5], duration = 1.6) {
+            if (!audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+
+                    gain.gain.setValueAtTime(0.0001, now + idx * 0.14);
+                    gain.gain.exponentialRampToValueAtTime(0.065, now + idx * 0.14 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + duration);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.14);
+                    osc.stop(now + idx * 0.14 + duration + 0.05);
+                });
+            } catch (e) {}
+        }
+
+        // ==========================================
+        // 3. Three.js 核心場景與抗過曝渲染設定
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x02050e);
+        scene.fog = new THREE.FogExp2(0x040b1c, 0.042);
+
+        const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 100);
+        // 聖誕樹約 2.0 公尺高 (y: 0 ~ 2.05)，攝影機置於前方稍遠處完整構圖
+        camera.position.set(0, 1.25, 4.35);
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            powerPreference: 'high-performance',
+            preserveDrawingBuffer: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        // 嚴格壓低整體曝光，確保雪地與藍白針葉層次清晰、絕不過曝泛白
+        renderer.toneMappingExposure = 0.78;
+        container.appendChild(renderer.domElement);
+
+        // 後處理 Bloom：大幅壓低強度與提高門檻，僅讓煙火、星光與樹頂星微亮
+        const renderScene = new THREE.RenderPass(scene, camera);
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.22,  // 極低光暈強度，杜絕整棵樹泛白過曝
+            0.42,  // 收斂光暈半徑
+            0.92   // 高門檻：一般雪地與藍白松針完全不會被光暈糊化
+        );
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // 軌道控制器
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 1.05, 0);
+        controls.minDistance = 2.0;
+        controls.maxDistance = 8.5;
+        controls.maxPolarAngle = Math.PI * 0.49;
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.65;
+
+        let userInteracting = false;
+        controls.addEventListener('start', () => {
+            userInteracting = true;
+            controls.autoRotate = false;
+        });
+
+        // ==========================================
+        // 4. 程序化紋理生成 (藍白霜雪松針紋理、雪地結晶微粒紋理、星光粒子)
+        // ==========================================
+        function createPineNeedleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            // 深邃冷藍綠底色，提供高對比針葉暗部
+            ctx.fillStyle = '#061a24';
+            ctx.fillRect(0, 0, 256, 256);
+
+            // 繪製銳利細密的藍白霜雪松針束
+            for (let i = 0; i < 820; i++) {
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                const len = 12 + Math.random() * 20;
+                const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.15;
+
+                const rPick = Math.random();
+                if (rPick > 0.52) {
+                    // 冰藍與銀白霜雪針葉
+                    const frosts = ['rgba(147, 197, 253, 0.78)', 'rgba(219, 234, 254, 0.72)', 'rgba(186, 230, 253, 0.82)'];
+                    ctx.strokeStyle = frosts[Math.floor(Math.random() * frosts.length)];
+                    ctx.lineWidth = 1.15;
+                } else {
+                    // 深海藍綠松針底層
+                    const deepBlues = ['#0a2e3d', '#0e3f52', '#07222e', '#114b5f'];
+                    ctx.strokeStyle = deepBlues[Math.floor(Math.random() * deepBlues.length)];
+                    ctx.lineWidth = 1.5;
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+                ctx.stroke();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(3, 3);
+            return tex;
+        }
+
+        function createSnowGroundTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // 冷夜雪地基底色
+            ctx.fillStyle = '#182b49';
+            ctx.fillRect(0, 0, 512, 512);
+
+            // 雪丘軟陰影與微粒冰晶反光點
+            for (let i = 0; i < 3200; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const r = 0.6 + Math.random() * 1.8;
+                const bright = Math.random();
+                if (bright > 0.85) {
+                    ctx.fillStyle = 'rgba(224, 242, 254, 0.42)';
+                } else if (bright > 0.4) {
+                    ctx.fillStyle = 'rgba(148, 187, 233, 0.16)';
+                } else {
+                    ctx.fillStyle = 'rgba(10, 22, 44, 0.25)';
+                }
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(10, 10);
+            return tex;
+        }
+
+        function createSoftCircleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.35, 'rgba(224, 242, 254, 0.75)');
+            grad.addColorStop(0.7, 'rgba(147, 197, 253, 0.25)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const pineTexture = createPineNeedleTexture();
+        const snowGroundTex = createSnowGroundTexture();
+        const glowSpriteTex = createSoftCircleTexture();
+
+        // ==========================================
+        // 5. 光源系統 (開場保有微亮地平線光線，螺旋上升後建立高對比冷調明暗層次)
+        // ==========================================
+        // 半球光：天空冷藍光 + 雪地微弱漫反射，確保開頭有微亮地平線輪廓
+        const hemiLight = new THREE.HemisphereLight(0x3b6ea5, 0x162847, 0.26);
+        scene.add(hemiLight);
+
+        const ambientLight = new THREE.AmbientLight(0x0b1930, 0.08);
+        scene.add(ambientLight);
+
+        // 冷月光主方向光 (從右上方斜射，雕刻出藍白針葉的立體明暗交界)
+        const moonLight = new THREE.DirectionalLight(0xb8d8ff, 0.14);
+        moonLight.position.set(3.6, 5.4, 3.2);
+        moonLight.castShadow = true;
+        moonLight.shadow.mapSize.width = 1024;
+        moonLight.shadow.mapSize.height = 1024;
+        moonLight.shadow.camera.near = 0.5;
+        moonLight.shadow.camera.far = 16;
+        moonLight.shadow.bias = -0.001;
+        scene.add(moonLight);
+
+        // 深藍色冷調背光 (勾勒松針與馴鹿邊緣輪廓，防止畫面死黑或正面過曝)
+        const rimLight = new THREE.DirectionalLight(0x2563eb, 0.18);
+        rimLight.position.set(-3.2, 2.6, -3.8);
+        scene.add(rimLight);
+
+        // 螺旋星光動態跟隨點光源 (隨著光帶上升照亮聖誕樹)
+        const spiralLeadLight = new THREE.PointLight(0xdbeafe, 0.0, 2.8, 2.0);
+        scene.add(spiralLeadLight);
+
+        // 樹頂星星微光
+        const starTopLight = new THREE.PointLight(0xffdf73, 0.0, 2.4, 2.2);
+        starTopLight.position.set(0, 2.12, 0);
+        scene.add(starTopLight);
+
+        // ==========================================
+        // 6. 夜空背景、微亮地平線光暈、閃爍星辰與起伏雪地地面
+        // ==========================================
+        // 深藍夜空穹頂 (在地平線處帶有微亮冷銀藍晨曦/月華微光)
+        const skyGeo = new THREE.SphereGeometry(42, 32, 24);
+        const skyCanvas = document.createElement('canvas');
+        skyCanvas.width = 32;
+        skyCanvas.height = 256;
+        const sCtx = skyCanvas.getContext('2d');
+        const sGrad = sCtx.createLinearGradient(0, 0, 0, 256);
+        sGrad.addColorStop(0.0, '#01040c');
+        sGrad.addColorStop(0.38, '#040d21');
+        sGrad.addColorStop(0.47, '#0d254c');
+        sGrad.addColorStop(0.50, '#274c7e'); // 地平線微亮冷藍銀光帶
+        sGrad.addColorStop(0.53, '#0e2242');
+        sGrad.addColorStop(1.0, '#020612');
+        sCtx.fillStyle = sGrad;
+        sCtx.fillRect(0, 0, 32, 256);
+        const skyTex = new THREE.CanvasTexture(skyCanvas);
+        const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false });
+        const skyDome = new THREE.Mesh(skyGeo, skyMat);
+        skyDome.visible = true; // 開場即保留微亮地平線光線
+        scene.add(skyDome);
+
+        // 遠景地平線微光光環 (讓雪地與夜空交界處在開頭就有柔和微亮層次)
+        const horizonRingGeo = new THREE.RingGeometry(18, 28, 64);
+        horizonRingGeo.rotateX(-Math.PI / 2);
+        const horizonRingMat = new THREE.MeshBasicMaterial({
+            color: 0x3b6ba5,
+            transparent: true,
+            opacity: 0.22,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const horizonRing = new THREE.Mesh(horizonRingGeo, horizonRingMat);
+        horizonRing.position.y = 0.03;
+        scene.add(horizonRing);
+
+        // 星空閃爍粒子
+        const starCount = 900;
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(starCount * 3);
+        const starPhases = new Float32Array(starCount);
+        for (let i = 0; i < starCount; i++) {
+            const r = 16 + Math.random() * 22;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI * 0.48;
+            starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i * 3 + 1] = r * Math.cos(phi) + 1.0;
+            starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+            starPhases[i] = Math.random() * Math.PI * 2;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({
+            color: 0xdbeafe,
+            size: 0.16,
+            map: glowSpriteTex,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        const skyStars = new THREE.Points(starGeo, starMat);
+        scene.add(skyStars);
+
+        // 起伏雪地地面 (Snow Ground：中央平坦承托聖誕樹，周圍自然雪丘起伏與雪結晶質感)
+        const groundGeo = new THREE.CircleGeometry(26, 72);
+        groundGeo.rotateX(-Math.PI / 2);
+        const gPos = groundGeo.attributes.position;
+        for (let i = 0; i < gPos.count; i++) {
+            const x = gPos.getX(i);
+            const z = gPos.getZ(i);
+            const dist = Math.hypot(x, z);
+            if (dist > 0.85) {
+                const wave = (Math.sin(x * 0.65) * Math.cos(z * 0.65) + Math.sin(x * 1.4 + z * 1.1) * 0.35) * 0.11;
+                gPos.setY(i, wave * Math.min(1, (dist - 0.85) / 3.5));
+            }
+        }
+        groundGeo.computeVertexNormals();
+        const groundMat = new THREE.MeshStandardMaterial({
+            map: snowGroundTex,
+            color: 0x8fb5e3,
+            roughness: 0.88,
+            metalness: 0.04
+        });
+        const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+        groundMesh.receiveShadow = true;
+        scene.add(groundMesh);
+
+        // 聖誕樹底座周圍的積雪堆 (讓樹自然紮根於雪地中)
+        const snowMoundGeo = new THREE.CylinderGeometry(0.45, 0.92, 0.14, 24);
+        const snowMoundMat = new THREE.MeshStandardMaterial({
+            map: snowGroundTex,
+            color: 0xa7c7ed,
+            roughness: 0.85,
+            metalness: 0.05
+        });
+        const snowMound = new THREE.Mesh(snowMoundGeo, snowMoundMat);
+        snowMound.position.y = 0.05;
+        snowMound.receiveShadow = true;
+        scene.add(snowMound);
+
+        // ==========================================
+        // 7. 約兩公尺高 3D 藍白針葉聖誕樹 (多層次細密藍白松針 + 高飽和紅黃鈴鐺彩蛋 + 樹頂星)
+        // ==========================================
+        const treeGroup = new THREE.Group();
+        scene.add(treeGroup);
+
+        // 用於點擊偵測的聖誕樹與落地禮物碰撞集合
+        const treeColliders = [];
+        const giftColliders = [];
+        const branchTiers = [];
+        const ornamentMeshes = [];
+        const fairyLightData = [];
+
+        // 樹幹 (深棕木質)
+        const trunkGeo = new THREE.CylinderGeometry(0.065, 0.11, 0.42, 16);
+        const trunkMat = new THREE.MeshStandardMaterial({
+            color: 0x1e110a,
+            roughness: 0.95
+        });
+        const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
+        trunkMesh.position.y = 0.21;
+        trunkMesh.castShadow = true;
+        trunkMesh.receiveShadow = true;
+        trunkMesh.userData = { revealY: 0.05 };
+        treeGroup.add(trunkMesh);
+
+        // 建立 13 層立體分明的藍白針葉樹冠 (總高度約 2.0 公尺：y = 0.28 至 y = 2.00)
+        const tierCount = 13;
+        for (let t = 0; t < tierCount; t++) {
+            const progress = t / (tierCount - 1); // 0 (最底層) -> 1 (最頂層)
+            const tierY = 0.30 + progress * 1.58;
+            const tierRadius = 0.80 * (1 - progress * 0.83) + 0.065;
+            const tierHeight = 0.34 * (1 - progress * 0.32);
+
+            const tierGroup = new THREE.Group();
+            tierGroup.position.y = tierY;
+            tierGroup.userData = {
+                revealY: tierY - 0.1,
+                baseRotY: t * 0.55,
+                swayPhase: t * 0.7,
+                targetScale: 1
+            };
+
+            // 內層深幽暗部核心 (營造針葉層與層之間的深邃陰影，確保藍白針葉輪廓銳利不泛白)
+            const innerConeGeo = new THREE.ConeGeometry(tierRadius * 0.74, tierHeight * 0.92, 18);
+            const innerConeMat = new THREE.MeshStandardMaterial({
+                color: 0x04121c,
+                roughness: 0.96
+            });
+            const innerCone = new THREE.Mesh(innerConeGeo, innerConeMat);
+            innerCone.position.y = tierHeight * 0.38;
+            tierGroup.add(innerCone);
+
+            // 外圍放射狀藍白針葉簇 (每層多束下垂針葉枝條 + 細分針葉小枝，呈現清晰針葉狀輪廓)
+            const branchCount = Math.max(9, Math.round(20 * (1 - progress * 0.52)));
+            for (let b = 0; b < branchCount; b++) {
+                const angle = (b / branchCount) * Math.PI * 2 + (t % 2) * 0.17;
+                const branchLen = tierRadius * (0.88 + Math.sin(b * 3.1 + t) * 0.12);
+
+                const twigHolder = new THREE.Group();
+                twigHolder.position.set(
+                    Math.cos(angle) * (branchLen * 0.44),
+                    tierHeight * 0.24,
+                    Math.sin(angle) * (branchLen * 0.44)
+                );
+                twigHolder.rotation.y = -angle + Math.PI / 2;
+
+                // 主針葉枝條 (四稜錐尖銳造型，模擬針葉叢)
+                const bGeo = new THREE.ConeGeometry(branchLen * 0.28, branchLen, 4);
+                bGeo.rotateX(Math.PI * 0.57);
+                bGeo.scale(1.12, 0.48, 1.0);
+
+                // 深冰藍與銀霜藍交替，塑造純粹的藍白針葉聖誕樹質感
+                const isSilverBlue = (b + t) % 2 === 0;
+                const bMat = new THREE.MeshStandardMaterial({
+                    map: pineTexture,
+                    color: isSilverBlue ? 0x7cb8e8 : 0x1e5378,
+                    roughness: 0.76,
+                    metalness: 0.08
+                });
+
+                const branchMesh = new THREE.Mesh(bGeo, bMat);
+                branchMesh.castShadow = true;
+                branchMesh.receiveShadow = true;
+                twigHolder.add(branchMesh);
+
+                // 左右側生針葉小簇 (增強針葉狀分叉細節)
+                [-0.36, 0.36].forEach(sideAngle => {
+                    const subGeo = new THREE.ConeGeometry(branchLen * 0.15, branchLen * 0.56, 4);
+                    subGeo.rotateX(Math.PI * 0.58);
+                    subGeo.scale(1.0, 0.44, 1.0);
+                    const subMat = new THREE.MeshStandardMaterial({
+                        map: pineTexture,
+                        color: isSilverBlue ? 0x3b7ca8 : 0x99cbf2,
+                        roughness: 0.74
+                    });
+                    const subTwig = new THREE.Mesh(subGeo, subMat);
+                    subTwig.position.set(sideAngle * branchLen * 0.35, -0.01, branchLen * 0.12);
+                    subTwig.rotation.y = sideAngle;
+                    twigHolder.add(subTwig);
+                });
+
+                // 針葉末梢銀白積霜尖端 (壓低反光避免過曝)
+                const tipGeo = new THREE.ConeGeometry(branchLen * 0.16, branchLen * 0.36, 4);
+                tipGeo.rotateX(Math.PI * 0.59);
+                tipGeo.scale(1.05, 0.42, 1.0);
+                const tipMat = new THREE.MeshStandardMaterial({
+                    color: 0xcbe4fa,
+                    roughness: 0.68,
+                    metalness: 0.06
+                });
+                const tipMesh = new THREE.Mesh(tipGeo, tipMat);
+                tipMesh.position.set(0, -0.022, branchLen * 0.38);
+                twigHolder.add(tipMesh);
+
+                tierGroup.add(twigHolder);
+            }
+
+            // 初始隱藏，等螺旋星光掃過時逐層展開
+            tierGroup.scale.setScalar(0.001);
+            treeGroup.add(tierGroup);
+            branchTiers.push(tierGroup);
+        }
+
+        // 高飽和度紅黃鈴鐺彩蛋裝飾 (Crimson Red, Bright Yellow, Warm Metallic Gold)
+        const ornamentPalette = [
+            { color: 0xef1a2d, emissive: 0x5c050d, type: 'egg' },    // 高飽和正紅彩蛋
+            { color: 0xffd60a, emissive: 0x664d00, type: 'bell' },   // 亮黃色鈴鐺
+            { color: 0xff3b30, emissive: 0x610a05, type: 'bell' },   // 亮紅鈴鐺
+            { color: 0xffc300, emissive: 0x5e4300, type: 'egg' },    // 金黃彩蛋
+            { color: 0xf59e0b, emissive: 0x4d2c00, type: 'bell' }    // 琥珀金鈴鐺
+        ];
+
+        // 彩蛋幾何體 (上下微拉長的橢圓蛋形)
+        const eggGeo = new THREE.SphereGeometry(0.036, 16, 16);
+        eggGeo.scale(0.86, 1.24, 0.86);
+
+        // 鈴鐺幾何體 (鐘形主體 + 底部鈴舌)
+        const bellBodyGeo = new THREE.CylinderGeometry(0.016, 0.036, 0.052, 16);
+        const bellClapperGeo = new THREE.SphereGeometry(0.012, 10, 10);
+
+        const totalOrnaments = 54;
+        for (let i = 0; i < totalOrnaments; i++) {
+            const hNorm = 0.06 + (i / totalOrnaments) * 0.86; // 分佈在 0.34m ~ 1.88m
+            const y = 0.32 + hNorm * 1.56;
+            const maxR = (0.78 * (1 - hNorm * 0.82) + 0.07) * 0.94;
+            const angle = i * 2.39996; // 黃金角均勻分佈
+
+            const style = ornamentPalette[i % ornamentPalette.length];
+            const mat = new THREE.MeshStandardMaterial({
+                color: style.color,
+                emissive: style.emissive,
+                emissiveIntensity: 0.42, // 適度自帶微光，在深綠松針中極度跳色且不爆白
+                roughness: 0.24,
+                metalness: 0.65
+            });
+
+            const ornGroup = new THREE.Group();
+            if (style.type === 'egg') {
+                const egg = new THREE.Mesh(eggGeo, mat);
+                ornGroup.add(egg);
+
+                // 彩蛋中間加一條金色裝飾腰帶
+                const bandGeo = new THREE.TorusGeometry(0.031, 0.0035, 8, 18);
+                bandGeo.rotateX(Math.PI / 2);
+                const bandMat = new THREE.MeshStandardMaterial({ color: 0xffe066, metalness: 0.85, roughness: 0.2 });
+                ornGroup.add(new THREE.Mesh(bandGeo, bandMat));
+            } else {
+                const bell = new THREE.Mesh(bellBodyGeo, mat);
+                const clapper = new THREE.Mesh(bellClapperGeo, mat);
+                clapper.position.y = -0.028;
+                ornGroup.add(bell);
+                ornGroup.add(clapper);
+            }
+
+            ornGroup.position.set(
+                Math.cos(angle) * maxR,
+                y - 0.03,
+                Math.sin(angle) * maxR
+            );
+            // 鈴鐺微微向外傾斜
+            ornGroup.rotation.z = Math.cos(angle) * 0.18;
+            ornGroup.rotation.x = Math.sin(angle) * 0.18;
+
+            ornGroup.userData = {
+                revealY: y - 0.06,
+                swingPhase: Math.random() * Math.PI * 2,
+                baseRotZ: ornGroup.rotation.z
+            };
+            ornGroup.scale.setScalar(0.001);
+            treeGroup.add(ornGroup);
+            ornamentMeshes.push(ornGroup);
+        }
+
+        // 纏繞樹身的微型暖白/冰藍點綴燈串
+        const bulbCount = 85;
+        const bulbGeo = new THREE.SphereGeometry(0.013, 8, 8);
+        for (let i = 0; i < bulbCount; i++) {
+            const t = i / bulbCount;
+            const y = 0.34 + t * 1.56;
+            const r = (0.78 * (1 - t * 0.82) + 0.07) * 0.91;
+            const angle = t * Math.PI * 11;
+
+            const isWarm = i % 2 === 0;
+            const bMat = new THREE.MeshBasicMaterial({
+                color: isWarm ? 0xffea9f : 0xbbe6ff
+            });
+            const bulb = new THREE.Mesh(bulbGeo, bMat);
+            bulb.position.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+            bulb.scale.setScalar(0.001);
+            treeGroup.add(bulb);
+            fairyLightData.push({
+                mesh: bulb,
+                revealY: y,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        // 樹頂立體五角星 (可點擊開啟祝福信封)
+        function createStarGeometry(outerR, innerR, depth) {
+            const shape = new THREE.Shape();
+            const spikes = 5;
+            for (let i = 0; i < spikes * 2; i++) {
+                const r = i % 2 === 0 ? outerR : innerR;
+                const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+                const x = Math.cos(a) * r;
+                const y = Math.sin(a) * r;
+                if (i === 0) shape.moveTo(x, y);
+                else shape.lineTo(x, y);
+            }
+            shape.closePath();
+            const extrudeSettings = {
+                depth: depth,
+                bevelEnabled: true,
+                bevelSegments: 2,
+                steps: 1,
+                bevelSize: 0.012,
+                bevelThickness: 0.012
+            };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.center();
+            return geo;
+        }
+
+        const starTopGroup = new THREE.Group();
+        starTopGroup.position.set(0, 2.04, 0);
+        const topStarGeo = createStarGeometry(0.14, 0.062, 0.032);
+        const topStarMat = new THREE.MeshStandardMaterial({
+            color: 0xfff3b0,
+            emissive: 0xffc83b,
+            emissiveIntensity: 1.15, // 觸發柔和 Bloom 光暈
+            roughness: 0.2,
+            metalness: 0.4
+        });
+        const topStarMesh = new THREE.Mesh(topStarGeo, topStarMat);
+        starTopGroup.add(topStarMesh);
+
+        // 星星外圍光暈精靈
+        const starHaloMat = new THREE.SpriteMaterial({
+            map: glowSpriteTex,
+            color: 0xffe58f,
+            transparent: true,
+            opacity: 0.72,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const starHalo = new THREE.Sprite(starHaloMat);
+        starHalo.scale.set(0.65, 0.65, 1);
+        starTopGroup.add(starHalo);
+
+        // 擴大樹頂星星的點擊感應球 (讓手機與滑鼠非常容易點中星星)
+        const starHitBox = new THREE.Mesh(
+            new THREE.SphereGeometry(0.28, 12, 12),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        starHitBox.name = 'STAR_TOP';
+        starTopGroup.add(starHitBox);
+
+        starTopGroup.scale.setScalar(0.001);
+        treeGroup.add(starTopGroup);
+
+        // 聖誕樹樹身隱形點擊感應圓錐 (用於點擊樹身召喚馴鹿雪橇)
+        const treeHitCone = new THREE.Mesh(
+            new THREE.ConeGeometry(0.82, 1.72, 16),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        treeHitCone.position.y = 1.05;
+        treeHitCone.name = 'TREE_BODY';
+        treeGroup.add(treeHitCone);
+        treeColliders.push(starHitBox, treeHitCone);
+
+        // ==========================================
+        // 8. 迎面風雪系統 (具有衝擊感的立體飄雪)
+        // ==========================================
+        const snowCount = 1300;
+        const snowGeo = new THREE.BufferGeometry();
+        const snowPos = new Float32Array(snowCount * 3);
+        const snowVel = new Float32Array(snowCount * 3);
+        for (let i = 0; i < snowCount; i++) {
+            snowPos[i * 3] = (Math.random() - 0.5) * 14;
+            snowPos[i * 3 + 1] = Math.random() * 7.5;
+            snowPos[i * 3 + 2] = (Math.random() - 0.5) * 15;
+
+            snowVel[i * 3] = (Math.random() - 0.5) * 0.35;
+            snowVel[i * 3 + 1] = -(0.65 + Math.random() * 0.95);
+            snowVel[i * 3 + 2] = 2.6 + Math.random() * 3.4; // 向鏡頭前方飛來，營造迎面衝擊感
+        }
+        snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+        const snowMat = new THREE.PointsMaterial({
+            color: 0xe0f2fe,
+            size: 0.085,
+            map: glowSpriteTex,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        const snowSystem = new THREE.Points(snowGeo, snowMat);
+        scene.add(snowSystem);
+
+        // ==========================================
+        // 9. 貼地導引光束、螺旋上升星光帶與金色星塵系統
+        // ==========================================
+        // 開場貼地光束前導精靈
+        const beamHeadMat = new THREE.SpriteMaterial({
+            map: glowSpriteTex,
+            color: 0xfde047,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const beamHead = new THREE.Sprite(beamHeadMat);
+        beamHead.scale.set(0.55, 0.32, 1);
+        beamHead.position.set(0, 0.04, 4.2);
+        scene.add(beamHead);
+
+        // 貼地光束拖尾粒子
+        const groundTrailCount = 90;
+        const groundTrailGeo = new THREE.BufferGeometry();
+        const groundTrailPos = new Float32Array(groundTrailCount * 3);
+        for (let i = 0; i < groundTrailCount; i++) {
+            groundTrailPos[i * 3 + 1] = -10;
+        }
+        groundTrailGeo.setAttribute('position', new THREE.BufferAttribute(groundTrailPos, 3));
+        const groundTrailMat = new THREE.PointsMaterial({
+            color: 0xfef08a,
+            size: 0.11,
+            map: glowSpriteTex,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const groundTrail = new THREE.Points(groundTrailGeo, groundTrailMat);
+        scene.add(groundTrail);
+
+        // 螺旋上升星光帶粒子
+        const spiralCount = 260;
+        const spiralGeo = new THREE.BufferGeometry();
+        const spiralPos = new Float32Array(spiralCount * 3);
+        for (let i = 0; i < spiralCount; i++) {
+            spiralPos[i * 3 + 1] = -10;
+        }
+        spiralGeo.setAttribute('position', new THREE.BufferAttribute(spiralPos, 3));
+        const spiralMat = new THREE.PointsMaterial({
+            color: 0xbae6fd,
+            size: 0.13,
+            map: glowSpriteTex,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const spiralStream = new THREE.Points(spiralGeo, spiralMat);
+        scene.add(spiralStream);
+
+        // 馴鹿與禮物空降灑落的金色星塵粒子池
+        const stardustCount = 220;
+        const stardustGeo = new THREE.BufferGeometry();
+        const stardustPos = new Float32Array(stardustCount * 3);
+        const stardustLife = new Float32Array(stardustCount);
+        for (let i = 0; i < stardustCount; i++) {
+            stardustPos[i * 3 + 1] = -20;
+            stardustLife[i] = 0;
+        }
+        stardustGeo.setAttribute('position', new THREE.BufferAttribute(stardustPos, 3));
+        const stardustMat = new THREE.PointsMaterial({
+            color: 0xfde047,
+            size: 0.11,
+            map: glowSpriteTex,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const stardustSystem = new THREE.Points(stardustGeo, stardustMat);
+        scene.add(stardustSystem);
+
+        let stardustCursor = 0;
+        function emitStardust(x, y, z, count = 2) {
+            const arr = stardustGeo.attributes.position.array;
+            for (let i = 0; i < count; i++) {
+                const idx = stardustCursor % stardustCount;
+                arr[idx * 3] = x + (Math.random() - 0.5) * 0.25;
+                arr[idx * 3 + 1] = y + (Math.random() - 0.5) * 0.18;
+                arr[idx * 3 + 2] = z + (Math.random() - 0.5) * 0.25;
+                stardustLife[idx] = 0.8 + Math.random() * 0.7;
+                stardustCursor++;
+            }
+            stardustGeo.attributes.position.needsUpdate = true;
+        }
+
+        // ==========================================
+        // 10. 高擬真三隻馴鹿雪橇與聖誕老人 (由右至左飛過 + 禮物空降落地 + 點擊禮物放彩蛋煙火)
+        // ==========================================
+        function createReindeer(isLead = false) {
+            const deer = new THREE.Group();
+            const furMat = new THREE.MeshStandardMaterial({ color: 0x7c4627, roughness: 0.76, metalness: 0.05 });
+            const bellyMat = new THREE.MeshStandardMaterial({ color: 0xc89d76, roughness: 0.85 });
+            const hoofMat = new THREE.MeshStandardMaterial({ color: 0x1c120c, roughness: 0.9 });
+            const antlerMat = new THREE.MeshStandardMaterial({ color: 0xe6cfa8, roughness: 0.55 });
+            const harnessMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.5, metalness: 0.2 });
+            const bellMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x664d00, emissiveIntensity: 0.4, metalness: 0.85, roughness: 0.2 });
+
+            // 流線型胸腔與軀幹
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.056, 0.24, 14), furMat);
+            torso.rotation.z = Math.PI / 2;
+            deer.add(torso);
+
+            const chest = new THREE.Mesh(new THREE.SphereGeometry(0.066, 12, 12), bellyMat);
+            chest.position.set(-0.10, -0.005, 0);
+            deer.add(chest);
+
+            const rump = new THREE.Mesh(new THREE.SphereGeometry(0.058, 12, 12), furMat);
+            rump.position.set(0.11, 0.005, 0);
+            deer.add(rump);
+
+            // 翹起的小尾巴
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 8), bellyMat);
+            tail.position.set(0.165, 0.035, 0);
+            tail.rotation.z = -0.6;
+            deer.add(tail);
+
+            // 紅色胸帶與金色鈴鐺項圈
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(0.056, 0.009, 8, 16), harnessMat);
+            collar.position.set(-0.095, 0.035, 0);
+            collar.rotation.y = Math.PI / 2;
+            collar.rotation.x = 0.35;
+            deer.add(collar);
+
+            const chestBell = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), bellMat);
+            chestBell.position.set(-0.145, -0.01, 0);
+            deer.add(chestBell);
+
+            // 優雅前傾的頸部
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.052, 0.15, 12), furMat);
+            neck.position.set(-0.125, 0.095, 0);
+            neck.rotation.z = 0.42;
+            deer.add(neck);
+
+            // 立體頭部與口鼻吻部
+            const headGroup = new THREE.Group();
+            headGroup.position.set(-0.165, 0.165, 0);
+
+            const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.044, 12, 12), furMat);
+            headGroup.add(cranium);
+
+            const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.034, 0.065, 10), bellyMat);
+            snout.rotation.z = Math.PI / 2;
+            snout.position.set(-0.042, -0.008, 0);
+            headGroup.add(snout);
+
+            // 雙眼與雙耳
+            [-0.026, 0.026].forEach(zSide => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 8), hoofMat);
+                eye.position.set(-0.025, 0.014, zSide * 1.15);
+                headGroup.add(eye);
+
+                const ear = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.042, 8), furMat);
+                ear.position.set(0.015, 0.035, zSide * 1.25);
+                ear.rotation.z = -0.45;
+                ear.rotation.x = zSide * 14;
+                headGroup.add(ear);
+            });
+
+            // 紅鼻子 (領頭馴鹿魯道夫發光紅鼻)
+            const noseMat = isLead
+                ? new THREE.MeshStandardMaterial({ color: 0xff1e1e, emissive: 0xff2a2a, emissiveIntensity: 1.3 })
+                : hoofMat;
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.015, 10, 10), noseMat);
+            nose.position.set(-0.076, -0.005, 0);
+            headGroup.add(nose);
+
+            // 分叉立體鹿角 (主幹 + 兩道前叉)
+            [-0.022, 0.022].forEach(zOff => {
+                const antlerGroup = new THREE.Group();
+                antlerGroup.position.set(0.0, 0.038, zOff);
+                antlerGroup.rotation.x = zOff * 10;
+
+                const mainBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.13, 6), antlerMat);
+                mainBeam.position.set(0.015, 0.055, 0);
+                mainBeam.rotation.z = -0.32;
+                antlerGroup.add(mainBeam);
+
+                const tine1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.005, 0.055, 6), antlerMat);
+                tine1.position.set(-0.012, 0.045, 0);
+                tine1.rotation.z = 0.45;
+                antlerGroup.add(tine1);
+
+                const tine2 = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.0045, 0.048, 6), antlerMat);
+                tine2.position.set(0.005, 0.082, 0);
+                tine2.rotation.z = 0.35;
+                antlerGroup.add(tine2);
+
+                headGroup.add(antlerGroup);
+            });
+
+            deer.add(headGroup);
+
+            // 關節式奔跑四肢 (大腿 + 小腿與蹄)
+            const legs = [];
+            const legConfigs = [
+                { x: -0.085, z: 0.036, isFront: true, phase: 0 },
+                { x: -0.085, z: -0.036, isFront: true, phase: 0.45 },
+                { x: 0.095, z: 0.036, isFront: false, phase: Math.PI },
+                { x: 0.095, z: -0.036, isFront: false, phase: Math.PI + 0.45 }
+            ];
+            legConfigs.forEach(cfg => {
+                const hip = new THREE.Group();
+                hip.position.set(cfg.x, -0.03, cfg.z);
+
+                const upperLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.012, 0.085, 8), furMat);
+                upperLeg.position.y = -0.04;
+                hip.add(upperLeg);
+
+                const knee = new THREE.Group();
+                knee.position.y = -0.08;
+
+                const lowerLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.008, 0.08, 8), furMat);
+                lowerLeg.position.y = -0.038;
+                knee.add(lowerLeg);
+
+                const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.018, 8), hoofMat);
+                hoof.position.y = -0.082;
+                knee.add(hoof);
+
+                hip.add(knee);
+                deer.add(hip);
+                legs.push({ hip, knee, isFront: cfg.isFront, phase: cfg.phase });
+            });
+
+            deer.userData.legs = legs;
+            deer.userData.headGroup = headGroup;
+            return deer;
+        }
+
+        function createSantaSleighGroup() {
+            const group = new THREE.Group();
+
+            // 3 隻立體馴鹿 (領頭鹿在前，後方兩隻並行拉雪橇，朝向 -X 方向由右至左飛行)
+            const reindeers = [];
+            const leadDeer = createReindeer(true);
+            leadDeer.position.set(-1.38, 0.05, 0);
+            group.add(leadDeer);
+            reindeers.push(leadDeer);
+
+            const leftWheelDeer = createReindeer(false);
+            leftWheelDeer.position.set(-0.78, 0.0, 0.14);
+            group.add(leftWheelDeer);
+            reindeers.push(leftWheelDeer);
+
+            const rightWheelDeer = createReindeer(false);
+            rightWheelDeer.position.set(-0.78, 0.0, -0.14);
+            group.add(rightWheelDeer);
+            reindeers.push(rightWheelDeer);
+
+            // 雙側金色韁繩連接三隻馴鹿至聖誕老人手中
+            const reinMat = new THREE.LineBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.85 });
+            [0.14, -0.14].forEach(zSide => {
+                const reinGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-1.42, 0.14, zSide * 0.25),
+                    new THREE.Vector3(-0.82, 0.11, zSide),
+                    new THREE.Vector3(0.24, 0.22, zSide * 0.45)
+                ]);
+                group.add(new THREE.Line(reinGeo, reinMat));
+            });
+
+            // 雕花紅木金邊雪橇
+            const sleighGroup = new THREE.Group();
+            sleighGroup.position.set(0.32, -0.04, 0);
+
+            const redVelvetMat = new THREE.MeshStandardMaterial({
+                color: 0x991b1b,
+                roughness: 0.62,
+                metalness: 0.18
+            });
+            const goldMetalMat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                emissive: 0x422006,
+                emissiveIntensity: 0.35,
+                roughness: 0.25,
+                metalness: 0.85
+            });
+            const woodMat = new THREE.MeshStandardMaterial({
+                color: 0x451a03,
+                roughness: 0.75
+            });
+
+            // 雪橇底盤與弧形車廂側板
+            const floorBase = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.28), woodMat);
+            floorBase.position.y = 0.02;
+            sleighGroup.add(floorBase);
+
+            [-0.135, 0.135].forEach(zSide => {
+                const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.15, 0.02), redVelvetMat);
+                sidePanel.position.set(0, 0.10, zSide);
+                sleighGroup.add(sidePanel);
+
+                const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.018, 0.026), goldMetalMat);
+                goldTrim.position.set(0, 0.175, zSide);
+                sleighGroup.add(goldTrim);
+            });
+
+            // 高聳靠背與車頭擋板
+            const backRest = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.25, 0.29), redVelvetMat);
+            backRest.position.set(0.23, 0.15, 0);
+            backRest.rotation.z = -0.18;
+            sleighGroup.add(backRest);
+
+            const frontDash = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.18, 0.29), redVelvetMat);
+            frontDash.position.set(-0.23, 0.11, 0);
+            frontDash.rotation.z = 0.25;
+            sleighGroup.add(frontDash);
+
+            // 雪橇底部雙側金色彎曲滑橇與支架
+            [-0.12, 0.12].forEach(z => {
+                const runner = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.016, 0.016), goldMetalMat);
+                runner.position.set(-0.02, -0.06, z);
+                sleighGroup.add(runner);
+
+                const frontCurl = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.008, 8, 14, Math.PI * 1.1), goldMetalMat);
+                frontCurl.position.set(-0.33, -0.005, z);
+                frontCurl.rotation.z = Math.PI * 0.5;
+                sleighGroup.add(frontCurl);
+
+                [-0.14, 0.14].forEach(xStrut => {
+                    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.08, 6), goldMetalMat);
+                    strut.position.set(xStrut, -0.02, z);
+                    sleighGroup.add(strut);
+                });
+            });
+
+            // 雪橇後方鼓鼓的棕色大禮物袋
+            const giftSack = new THREE.Mesh(
+                new THREE.SphereGeometry(0.115, 12, 12),
+                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 })
+            );
+            giftSack.scale.set(0.95, 1.15, 1.05);
+            giftSack.position.set(0.12, 0.16, 0);
+            sleighGroup.add(giftSack);
+
+            // 逼真立體聖誕老人 (天鵝絨紅大衣 + 白毛絨滾邊 + 黑腰帶金扣 + 捲鬍鬚 + 揮手右臂)
+            const santa = new THREE.Group();
+            santa.position.set(-0.04, 0.18, 0);
+
+            const coatMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.72 });
+            const whiteFurMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.92 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfed7aa, roughness: 0.6 });
+            const beltMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+
+            // 圓潤大衣身軀
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.11, 0.21, 14), coatMat);
+            santa.add(torso);
+
+            // 胸前白色毛絨直條滾邊與下擺毛邊
+            const frontTrim = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.20, 0.03), whiteFurMat);
+            frontTrim.position.set(-0.085, 0, 0);
+            santa.add(frontTrim);
+
+            const hemTrim = new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.115, 0.032, 14), whiteFurMat);
+            hemTrim.position.y = -0.095;
+            santa.add(hemTrim);
+
+            // 黑色腰帶與金色帶扣
+            const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.102, 0.028, 14), beltMat);
+            belt.position.y = -0.02;
+            santa.add(belt);
+
+            const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.036, 0.042), goldMetalMat);
+            buckle.position.set(-0.098, -0.02, 0);
+            santa.add(buckle);
+
+            // 雙臂 (左臂拉韁繩，右臂揮手致意)
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.13, 10), coatMat);
+            leftArm.position.set(-0.06, 0.04, 0.09);
+            leftArm.rotation.z = 0.85;
+            santa.add(leftArm);
+
+            const rightArmGroup = new THREE.Group();
+            rightArmGroup.position.set(0.0, 0.07, -0.095);
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.13, 10), coatMat);
+            rightArm.position.y = 0.05;
+            rightArmGroup.add(rightArm);
+            const rightMitten = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), whiteFurMat);
+            rightMitten.position.y = 0.12;
+            rightArmGroup.add(rightMitten);
+            santa.add(rightArmGroup);
+
+            // 頭部、紅潤雙頰、八字鬍與大白鬍鬚
+            const santaHead = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 14), skinMat);
+            santaHead.position.y = 0.155;
+            santa.add(santaHead);
+
+            // 紅鼻頭與雙眼
+            const santaNose = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 8), coatMat);
+            santaNose.position.set(-0.058, 0.152, 0);
+            santa.add(santaNose);
+
+            // 蓬鬆多層白鬍鬚
+            const mainBeard = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.13, 12), whiteFurMat);
+            mainBeard.rotation.x = Math.PI;
+            mainBeard.rotation.z = -0.22;
+            mainBeard.position.set(-0.045, 0.105, 0);
+            santa.add(mainBeard);
+
+            [-0.024, 0.024].forEach(zMustache => {
+                const mustache = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), whiteFurMat);
+                mustache.scale.set(0.8, 0.7, 1.3);
+                mustache.position.set(-0.058, 0.136, zMustache);
+                santa.add(mustache);
+            });
+
+            // 紅色天鵝絨聖誕帽、白色毛絨帽簷與垂墜白毛球
+            const hatBrim = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.018, 8, 16), whiteFurMat);
+            hatBrim.rotation.x = Math.PI / 2;
+            hatBrim.rotation.y = -0.25;
+            hatBrim.position.set(0.005, 0.195, 0);
+            santa.add(hatBrim);
+
+            const hatCone = new THREE.Mesh(new THREE.ConeGeometry(0.058, 0.145, 12), coatMat);
+            hatCone.position.set(0.025, 0.255, 0);
+            hatCone.rotation.z = -0.45;
+            santa.add(hatCone);
+
+            const pomPom = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), whiteFurMat);
+            pomPom.position.set(0.062, 0.315, 0);
+            santa.add(pomPom);
+
+            sleighGroup.add(santa);
+            group.add(sleighGroup);
+
+            group.userData.reindeers = reindeers;
+            group.userData.santaRightArm = rightArmGroup;
+            group.visible = false;
+            return group;
+        }
+
+        const santaSleigh = createSantaSleighGroup();
+        scene.add(santaSleigh);
+
+        // 空降禮物系統 (落在聖誕樹下，點擊可觸發絢麗彩蛋與煙火爆炸)
+        const fallingGifts = [];
+        const landedGifts = [];
+        const activeFireworks = [];
+        const giftColors = [
+            { box: 0xdc2626, ribbon: 0xfacc15 },
+            { box: 0x1d4ed8, ribbon: 0xfef08a },
+            { box: 0x047857, ribbon: 0xf87171 },
+            { box: 0xb45309, ribbon: 0xffffff }
+        ];
+
+        function createGiftMesh() {
+            const style = giftColors[Math.floor(Math.random() * giftColors.length)];
+            const size = 0.12 + Math.random() * 0.045;
+            const g = new THREE.Group();
+
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: style.box,
+                roughness: 0.42,
+                metalness: 0.18
+            });
+            const ribMat = new THREE.MeshStandardMaterial({
+                color: style.ribbon,
+                emissive: style.ribbon,
+                emissiveIntensity: 0.25,
+                roughness: 0.28,
+                metalness: 0.65
+            });
+
+            const box = new THREE.Mesh(new THREE.BoxGeometry(size, size * 0.88, size), boxMat);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            g.add(box);
+
+            const rib1 = new THREE.Mesh(new THREE.BoxGeometry(size * 1.04, size * 0.91, size * 0.18), ribMat);
+            const rib2 = new THREE.Mesh(new THREE.BoxGeometry(size * 0.18, size * 0.91, size * 1.04), ribMat);
+            g.add(rib1, rib2);
+
+            // 頂部蝴蝶結與隱形放大點擊感應球 (讓手機更容易點中落地禮物)
+            const bow = new THREE.Mesh(new THREE.TorusKnotGeometry(size * 0.16, size * 0.035, 24, 6), ribMat);
+            bow.rotation.x = Math.PI / 2;
+            bow.position.y = size * 0.48;
+            g.add(bow);
+
+            const hitSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(size * 1.35, 8, 8),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            hitSphere.name = 'LANDED_GIFT';
+            hitSphere.userData.giftRoot = g;
+            g.add(hitSphere);
+
+            g.userData.halfH = size * 0.44;
+            g.userData.hitSphere = hitSphere;
+            g.userData.pulsePhase = Math.random() * Math.PI * 2;
+            return g;
+        }
+
+        // 點擊禮物後觸發的 3D 絢麗煙火與發光彩蛋爆炸特效
+        const SURPRISE_MESSAGES = [
+            '🎆 奇蹟煙火綻放！願你的新年如星火般璀璨奪目！',
+            '🥚 獲得黃金彩蛋！願平安與喜樂充滿你的每一天！',
+            '✨ 聖誕驚喜禮讚！願愛與盼望常駐你心！',
+            '🎇 星光煙火祝願：願神賜福你手所做的一切盡都順利！'
+        ];
+
+        function triggerGiftFireworkAndEgg(giftGroup) {
+            const origin = giftGroup.position.clone();
+            origin.y += 0.12;
+
+            // 從落地清單與場景移除該禮物盒
+            const idx = landedGifts.indexOf(giftGroup);
+            if (idx !== -1) landedGifts.splice(idx, 1);
+            const colIdx = giftColliders.indexOf(giftGroup.userData.hitSphere);
+            if (colIdx !== -1) giftColliders.splice(colIdx, 1);
+            scene.remove(giftGroup);
+
+            // 播放清脆煙火與風鈴和弦音效
+            playMagicChime([523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98], 2.0);
+
+            // 建立多層次絢麗粒子煙火 + 旋轉發光彩蛋核心
+            const particleCount = 150;
+            const fwGeo = new THREE.BufferGeometry();
+            const fwPos = new Float32Array(particleCount * 3);
+            const fwColors = new Float32Array(particleCount * 3);
+            const velocities = [];
+
+            const palette = [
+                new THREE.Color(0xffd700), // 璀璨金
+                new THREE.Color(0xff3b30), // 聖誕紅
+                new THREE.Color(0x38bdf8), // 極光藍
+                new THREE.Color(0xf472b6), // 夢幻粉紫
+                new THREE.Color(0xa7f3d0)  // 翡翠星光
+            ];
+
+            for (let i = 0; i < particleCount; i++) {
+                fwPos[i * 3] = origin.x;
+                fwPos[i * 3 + 1] = origin.y;
+                fwPos[i * 3 + 2] = origin.z;
+
+                // 球形放射噴發速度 (帶向上拋射初速，在聖誕樹前方半空綻放)
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const speed = 0.85 + Math.random() * 1.45;
+                velocities.push({
+                    vx: Math.sin(phi) * Math.cos(theta) * speed,
+                    vy: Math.abs(Math.cos(phi)) * speed + 1.45,
+                    vz: Math.sin(phi) * Math.sin(theta) * speed
+                });
+
+                const col = palette[i % palette.length];
+                fwColors[i * 3] = col.r;
+                fwColors[i * 3 + 1] = col.g;
+                fwColors[i * 3 + 2] = col.b;
+            }
+
+            fwGeo.setAttribute('position', new THREE.BufferAttribute(fwPos, 3));
+            fwGeo.setAttribute('color', new THREE.BufferAttribute(fwColors, 3));
+
+            const fwMat = new THREE.PointsMaterial({
+                size: 0.13,
+                map: glowSpriteTex,
+                vertexColors: true,
+                transparent: true,
+                opacity: 1.0,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const fwPoints = new THREE.Points(fwGeo, fwMat);
+            scene.add(fwPoints);
+
+            // 中央彈出的發光彩蛋精靈球
+            const eggGeo = new THREE.SphereGeometry(0.065, 16, 16);
+            eggGeo.scale(0.82, 1.25, 0.82);
+            const eggMat = new THREE.MeshStandardMaterial({
+                color: 0xffe066,
+                emissive: 0xff9f1c,
+                emissiveIntensity: 1.1,
+                roughness: 0.2,
+                metalness: 0.8,
+                transparent: true,
+                opacity: 1.0
+            });
+            const surpriseEgg = new THREE.Mesh(eggGeo, eggMat);
+            surpriseEgg.position.copy(origin);
+            scene.add(surpriseEgg);
+
+            // 煙火瞬時閃光點光源
+            const flashLight = new THREE.PointLight(0xffe066, 1.8, 3.5, 2.0);
+            flashLight.position.set(origin.x, origin.y + 0.5, origin.z);
+            scene.add(flashLight);
+
+            activeFireworks.push({
+                points: fwPoints,
+                geo: fwGeo,
+                mat: fwMat,
+                velocities,
+                egg: surpriseEgg,
+                eggMat,
+                light: flashLight,
+                age: 0,
+                maxAge: 2.1
+            });
+
+            const msg = SURPRISE_MESSAGES[Math.floor(Math.random() * SURPRISE_MESSAGES.length)];
+            showToast(msg);
+        }
+
+        let sleighActive = false;
+        let sleighProgress = 0;
+        let giftsSpawnedInRun = 0;
+
+        function triggerSantaFlyby() {
+            if (sleighActive) return;
+            sleighActive = true;
+            sleighProgress = 0;
+            giftsSpawnedInRun = 0;
+            santaSleigh.visible = true;
+            santaSleigh.position.set(4.5, 2.35, -0.35);
+            playMagicChime([587.33, 739.99, 880, 1174.66], 1.4);
+        }
+
+        function spawnGiftFromSky(startX, startY, startZ) {
+            // 若樹下禮物超過 18 個，移除最舊的一個維持畫面整潔
+            if (landedGifts.length >= 18) {
+                const oldest = landedGifts.shift();
+                const cIdx = giftColliders.indexOf(oldest.userData.hitSphere);
+                if (cIdx !== -1) giftColliders.splice(cIdx, 1);
+                scene.remove(oldest);
+            }
+            const gift = createGiftMesh();
+            gift.position.set(startX, startY, startZ);
+
+            // 計算樹下隨機落點 (半徑 0.28m ~ 0.78m 環繞樹幹，方便點擊)
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 0.28 + Math.random() * 0.50;
+            const targetX = Math.cos(angle) * radius;
+            const targetZ = Math.sin(angle) * radius;
+
+            scene.add(gift);
+            fallingGifts.push({
+                mesh: gift,
+                startX,
+                startY,
+                startZ,
+                targetX,
+                targetZ,
+                progress: 0,
+                swayOffset: Math.random() * Math.PI * 2
+            });
+        }
+
+        // ==========================================
+        // 11. 開場全黑觸控轉場與信封互動邏輯 (零 Bug 雙重事件鎖定)
+        // ==========================================
+        let experienceStarted = false;
+        let sequenceStartTime = 0;
+        let treeFullyRevealed = false;
+
+        const introOverlay = document.getElementById('intro-overlay');
+        const hudContainer = document.getElementById('hud-container');
+
+        function handleStartExperience(e) {
+            if (e && e.cancelable) e.preventDefault();
+            if (experienceStarted) return;
+            experienceStarted = true;
+
+            initAudio();
+            playMagicChime([440, 554.37, 659.25, 880], 2.2);
+
+            introOverlay.classList.add('fade-out');
+            sequenceStartTime = performance.now();
+        }
+
+        // 同時監聽 pointerdown、touchstart 與 click，確保任何手機/平板/電腦輕觸一次立即轉場
+        introOverlay.addEventListener('pointerdown', handleStartExperience, { passive: false });
+        introOverlay.addEventListener('touchstart', handleStartExperience, { passive: false });
+        introOverlay.addEventListener('click', handleStartExperience);
+
+        // 信封彈窗與祝福語抽卡
+        const envelopeModal = document.getElementById('envelope-modal');
+        const envelopeBox = document.getElementById('envelope-box');
+        const waxSealBtn = document.getElementById('wax-seal-btn');
+        const blessingLangTag = document.getElementById('blessing-lang-tag');
+        const blessingMainText = document.getElementById('blessing-main-text');
+        const blessingSubText = document.getElementById('blessing-sub-text');
+
+        let lastBlessingIdx = -1;
+        function pickRandomBlessing() {
+            let idx = Math.floor(Math.random() * BLESSINGS.length);
+            if (idx === lastBlessingIdx) {
+                idx = (idx + 1) % BLESSINGS.length;
+            }
+            lastBlessingIdx = idx;
+            currentBlessing = BLESSINGS[idx];
+            blessingLangTag.textContent = currentBlessing.tag;
+            blessingMainText.textContent = currentBlessing.text;
+            blessingSubText.textContent = currentBlessing.sub;
+        }
+
+        function openBlessingEnvelope() {
+            pickRandomBlessing();
+            envelopeBox.classList.remove('opened');
+            envelopeModal.classList.add('active');
+            playMagicChime([523.25, 659.25, 783.99], 1.2);
+        }
+
+        function unsealEnvelope() {
+            if (!envelopeBox.classList.contains('opened')) {
+                envelopeBox.classList.add('opened');
+                playMagicChime([659.25, 830.61, 987.77, 1318.51], 1.8);
+            }
+        }
+
+        waxSealBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            unsealEnvelope();
+        });
+        envelopeBox.addEventListener('click', () => {
+            unsealEnvelope();
+        });
+
+        // 點擊背景空白處關閉信封
+        envelopeModal.addEventListener('click', (e) => {
+            if (e.target === envelopeModal) {
+                envelopeModal.classList.remove('active');
+            }
+        });
+
+        // 選擇二：再抽一封或關閉
+        document.getElementById('btn-next-blessing').addEventListener('click', () => {
+            envelopeBox.classList.remove('opened');
+            setTimeout(() => {
+                pickRandomBlessing();
+                unsealEnvelope();
+            }, 320);
+        });
+
+        // 顯示通知 Toast
+        const toastBox = document.getElementById('toast-box');
+        const toastText = document.getElementById('toast-text');
+        let toastTimer = null;
+        function showToast(msg) {
+            toastText.textContent = msg;
+            toastBox.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toastBox.classList.remove('show');
+            }, 3400);
+        }
+
+        // 選擇一：收下祝福並自動生成高畫質紀念圖卡保存至設備
+        function saveBlessingCardImage() {
+            try {
+                const cardCanvas = document.createElement('canvas');
+                cardCanvas.width = 1080;
+                cardCanvas.height = 1440;
+                const ctx = cardCanvas.getContext('2d');
+
+                // 1. 深藍星空背景漸層
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, 1440);
+                bgGrad.addColorStop(0, '#040a1a');
+                bgGrad.addColorStop(0.55, '#0b1d3d');
+                bgGrad.addColorStop(1, '#050c1f');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, 1080, 1440);
+
+                // 2. 背景星光與飄雪
+                for (let i = 0; i < 160; i++) {
+                    const sx = Math.random() * 1080;
+                    const sy = Math.random() * 1440;
+                    const sr = 1 + Math.random() * 2.8;
+                    ctx.fillStyle = i % 3 === 0 ? 'rgba(253, 224, 71, 0.7)' : 'rgba(224, 242, 254, 0.65)';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 3. 精緻金色雙線畫框
+                ctx.strokeStyle = 'rgba(253, 224, 71, 0.55)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(54, 54, 972, 1332);
+                ctx.strokeStyle = 'rgba(186, 230, 253, 0.25)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(72, 72, 936, 1296);
+
+                // 4. 繪製極簡高雅的聖誕樹剪影與星光螺旋
+                ctx.save();
+                ctx.translate(540, 490);
+                // 樹冠層次
+                const layers = 5;
+                for (let l = 0; l < layers; l++) {
+                    const w = 230 - l * 36;
+                    const yTop = -230 + l * 46;
+                    const yBot = yTop + 125;
+                    const tGrad = ctx.createLinearGradient(0, yTop, 0, yBot);
+                    tGrad.addColorStop(0, '#1e4e68');
+                    tGrad.addColorStop(1, '#0b2b22');
+                    ctx.fillStyle = tGrad;
+                    ctx.beginPath();
+                    ctx.moveTo(0, yTop);
+                    ctx.lineTo(-w, yBot);
+                    ctx.lineTo(w, yBot);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                // 紅黃鈴鐺彩蛋點綴
+                const dots = [
+                    [-60, -80, '#ef4444'], [75, -40, '#facc15'], [-110, 40, '#facc15'],
+                    [45, 75, '#ef4444'], [-30, 125, '#ef4444'], [120, 130, '#facc15']
+                ];
+                dots.forEach(([dx, dy, col]) => {
+                    ctx.fillStyle = col;
+                    ctx.beginPath();
+                    ctx.arc(dx, dy, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                // 樹頂之星
+                ctx.fillStyle = '#fde047';
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 24;
+                ctx.beginPath();
+                ctx.arc(0, -255, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // 5. 標題文字
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#fde68a';
+                ctx.font = 'bold 54px "Cinzel", Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('MERRY CHRISTMAS', 540, 770);
+
+                ctx.fillStyle = '#bae6fd';
+                ctx.font = 'italic 26px Georgia, serif';
+                ctx.fillText('A Night Full of Light and Miracles', 540, 820);
+
+                // 6. 自動換行繪製祝福語正文
+                ctx.fillStyle = '#ffffff';
+                ctx.font = currentBlessing.lang === 'ZH'
+                    ? '600 36px "Noto Serif TC", sans-serif'
+                    : '500 34px Georgia, serif';
+
+                const maxWidth = 820;
+                const lineHeight = 58;
+                const text = currentBlessing.text;
+                const lines = [];
+                let line = '';
+
+                if (currentBlessing.lang === 'ZH') {
+                    for (let i = 0; i < text.length; i++) {
+                        const testLine = line + text[i];
+                        if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+                            lines.push(line);
+                            line = text[i];
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line);
+                } else {
+                    const words = text.split(' ');
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                            lines.push(line.trim());
+                            line = words[n] + ' ';
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line.trim());
+                }
+
+                let startY = 930;
+                lines.forEach((l, idx) => {
+                    ctx.fillText(l, 540, startY + idx * lineHeight);
+                });
+
+                // 7. 副標與日期落款
+                ctx.fillStyle = '#fcd34d';
+                ctx.font = '26px "Noto Serif TC", Georgia, serif';
+                ctx.fillText(`— ${currentBlessing.sub} —`, 540, startY + lines.length * lineHeight + 55);
+
+                const dateStr = new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                ctx.fillStyle = 'rgba(186, 230, 253, 0.55)';
+                ctx.font = '22px monospace';
+                ctx.fillText(`✦ ${dateStr} ✦`, 540, 1320);
+
+                // 觸發自動下載
+                const dataUrl = cardCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `Christmas_Blessing_${Date.now()}.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast('✨ 已收下祝福！紀念圖卡已自動保存至您的設備');
+            } catch (err) {
+                showToast('✨ 已收下祝福！願平安與喜樂常伴您左右');
+            }
+
+            playMagicChime([523.25, 659.25, 783.99, 1046.5, 1318.5], 2.0);
+            setTimeout(() => {
+                envelopeModal.classList.remove('active');
+            }, 550);
+        }
+
+        document.getElementById('btn-accept-blessing').addEventListener('click', saveBlessingCardImage);
+        document.getElementById('btn-summon-santa').addEventListener('click', triggerSantaFlyby);
+        document.getElementById('btn-open-star').addEventListener('click', openBlessingEnvelope);
+
+        // ==========================================
+        // 12. 3D 射線點擊偵測 (區分點擊「樹頂星星」與點擊「聖誕樹本體」)
+        // ==========================================
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let downPos = { x: 0, y: 0 };
+        let downTime = 0;
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            downPos = { x: e.clientX, y: e.clientY };
+            downTime = performance.now();
+        });
+
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (!experienceStarted) return;
+            const moveDist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+            const elapsed = performance.now() - downTime;
+            // 確保是輕觸點擊而非拖曳旋轉鏡頭
+            if (moveDist > 12 || elapsed > 450) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+
+            // 1. 優先偵測是否點擊了雪地上落下的禮物盒 (觸發彩蛋與煙火)
+            const giftHits = raycaster.intersectObjects(giftColliders, false);
+            if (giftHits.length > 0 && giftHits[0].object.userData.giftRoot) {
+                triggerGiftFireworkAndEgg(giftHits[0].object.userData.giftRoot);
+                return;
+            }
+
+            // 2. 偵測是否點擊了樹頂星星或聖誕樹本體
+            const hits = raycaster.intersectObjects(treeColliders, false);
+            if (hits.length > 0) {
+                const hitName = hits[0].object.name;
+                if (hitName === 'STAR_TOP') {
+                    openBlessingEnvelope();
+                } else if (hitName === 'TREE_BODY') {
+                    triggerSantaFlyby();
+                }
+            }
+        });
+
+        // ==========================================
+        // 13. 主動畫迴圈 (時間軸控制、物理微風搖曳、迎面風雪、馴鹿與禮物拋物線)
+        // ==========================================
+        let lastFrameTime = performance.now();
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            const timeSec = now * 0.001;
+
+            if (experienceStarted) {
+                const elapsed = (now - sequenceStartTime) / 1000;
+
+                // 階段一 (0.0s ~ 3.0s)：全黑畫面中，一束星光貼合地面從前方延伸至聖誕樹底座
+                if (elapsed <= 3.0) {
+                    const p = elapsed / 3.0;
+                    const easeP = 1 - Math.pow(1 - p, 2.2);
+                    const currentZ = 4.2 * (1 - easeP);
+
+                    beamHead.position.set(Math.sin(elapsed * 5) * 0.04, 0.04, currentZ);
+                    beamHeadMat.opacity = Math.sin(p * Math.PI) * 0.95 + (p > 0.8 ? 0.5 : 0);
+
+                    // 更新貼地拖尾光點
+                    const posArr = groundTrailGeo.attributes.position.array;
+                    for (let i = 0; i < groundTrailCount; i++) {
+                        const trailRatio = i / groundTrailCount;
+                        const zPos = 4.2 - trailRatio * (4.2 - currentZ);
+                        posArr[i * 3] = Math.sin(zPos * 3 + i) * 0.08 * (1 - trailRatio * 0.5);
+                        posArr[i * 3 + 1] = 0.02 + Math.abs(Math.sin(elapsed * 6 + i)) * 0.025;
+                        posArr[i * 3 + 2] = zPos;
+                    }
+                    groundTrailGeo.attributes.position.needsUpdate = true;
+                    groundTrailMat.opacity = Math.min(0.85, p * 1.4);
+
+                    spiralLeadLight.position.set(0, 0.12, currentZ);
+                    spiralLeadLight.intensity = 1.1 * Math.min(1, p * 2);
+                }
+
+                // 階段二 (3.0s ~ 7.8s)：星光聚集為螺旋光帶，從樹底繞外圍盤旋上升並逐層照亮聖誕樹
+                if (elapsed > 3.0) {
+                    // 貼地光束漸隱
+                    beamHeadMat.opacity = Math.max(0, beamHeadMat.opacity - dt * 1.6);
+                    groundTrailMat.opacity = Math.max(0, groundTrailMat.opacity - dt * 1.2);
+
+                    const spiralDur = 4.6;
+                    const sp = Math.min(1, (elapsed - 3.0) / spiralDur);
+                    const easeSp = sp < 0.5 ? 2 * sp * sp : 1 - Math.pow(-2 * sp + 2, 2) / 2;
+
+                    const headY = 0.08 + easeSp * 2.02; // 從地面升至樹頂 2.10m
+                    const totalTurns = 4.5 * Math.PI * 2;
+                    const headAngle = easeSp * totalTurns;
+                    const headR = Math.max(0.05, 0.84 * (1 - easeSp * 0.88));
+
+                    // 螺旋星光前導點光源
+                    spiralLeadLight.position.set(
+                        Math.cos(headAngle) * headR,
+                        headY,
+                        Math.sin(headAngle) * headR
+                    );
+                    spiralLeadLight.intensity = sp < 1 ? 1.45 : Math.max(0, spiralLeadLight.intensity - dt * 1.5);
+
+                    // 更新螺旋光帶粒子位置
+                    const sArr = spiralGeo.attributes.position.array;
+                    for (let i = 0; i < spiralCount; i++) {
+                        const trailT = i / spiralCount;
+                        const localP = Math.max(0, easeSp - trailT * 0.28);
+                        if (localP <= 0 || sp >= 1) {
+                            sArr[i * 3 + 1] = -10;
+                        } else {
+                            const ly = 0.08 + localP * 2.02;
+                            const la = localP * totalTurns + (i % 7) * 0.06;
+                            const lr = Math.max(0.04, 0.84 * (1 - localP * 0.88)) + Math.sin(i * 1.7) * 0.04;
+                            sArr[i * 3] = Math.cos(la) * lr;
+                            sArr[i * 3 + 1] = ly;
+                            sArr[i * 3 + 2] = Math.sin(la) * lr;
+                        }
+                    }
+                    spiralGeo.attributes.position.needsUpdate = true;
+                    spiralMat.opacity = sp < 0.92 ? 0.9 : Math.max(0, (1 - sp) * 11);
+
+                    // 隨螺旋上升高度逐步點亮藍夜空、環境光與主光源 (嚴格控制上限防過曝)
+                    skyDome.visible = true;
+                    horizonRingMat.opacity = 0.22 + sp * 0.14;
+                    hemiLight.intensity = 0.26 + sp * 0.22;
+                    ambientLight.intensity = 0.08 + sp * 0.14;
+                    moonLight.intensity = 0.14 + sp * 0.62;
+                    rimLight.intensity = 0.18 + sp * 0.34;
+                    starMat.opacity = Math.min(0.85, sp * 0.95);
+                    snowMat.opacity = Math.min(0.88, sp * 1.1);
+
+                    // 逐層展開藍白針葉樹冠
+                    branchTiers.forEach(tier => {
+                        if (headY >= tier.userData.revealY) {
+                            const curS = tier.scale.x;
+                            const nextS = curS + (1 - curS) * Math.min(1, dt * 6.5);
+                            tier.scale.setScalar(nextS);
+                        }
+                    });
+
+                    // 逐顆點亮高對比紅黃鈴鐺彩蛋
+                    ornamentMeshes.forEach(orn => {
+                        if (headY >= orn.userData.revealY) {
+                            const curS = orn.scale.x;
+                            const nextS = curS + (1 - curS) * Math.min(1, dt * 8.0);
+                            orn.scale.setScalar(nextS);
+                        }
+                    });
+
+                    // 逐顆點亮燈串
+                    fairyLightData.forEach(b => {
+                        if (headY >= b.revealY) {
+                            const pulse = 0.82 + Math.sin(timeSec * 3.2 + b.phase) * 0.25;
+                            b.mesh.scale.setScalar(pulse);
+                        }
+                    });
+
+                    // 螺旋抵達樹頂時點亮樹頂之星
+                    if (sp >= 0.94) {
+                        const sCur = starTopGroup.scale.x;
+                        starTopGroup.scale.setScalar(sCur + (1 - sCur) * Math.min(1, dt * 6.0));
+                        starTopLight.intensity = 0.95 + Math.sin(timeSec * 3) * 0.15;
+                    }
+
+                    if (sp >= 1 && !treeFullyRevealed) {
+                        treeFullyRevealed = true;
+                        hudContainer.classList.remove('opacity-0');
+                        if (!userInteracting) controls.autoRotate = true;
+                    }
+                }
+            }
+
+            // 松針微風物理擺動與鈴鐺輕晃
+            branchTiers.forEach((tier, idx) => {
+                if (tier.scale.x > 0.1) {
+                    const breeze = Math.sin(timeSec * 1.35 + tier.userData.swayPhase) * 0.014 * (1 + idx * 0.08);
+                    tier.rotation.z = breeze;
+                    tier.rotation.x = Math.cos(timeSec * 1.1 + tier.userData.swayPhase) * 0.01;
+                }
+            });
+            ornamentMeshes.forEach(orn => {
+                if (orn.scale.x > 0.1) {
+                    orn.rotation.z = orn.userData.baseRotZ + Math.sin(timeSec * 2.1 + orn.userData.swingPhase) * 0.08;
+                }
+            });
+
+            // 樹頂星星自轉與光暈呼吸
+            if (starTopGroup.scale.x > 0.1) {
+                topStarMesh.rotation.y = timeSec * 0.9;
+                const haloScale = 0.62 + Math.sin(timeSec * 2.8) * 0.08;
+                starHalo.scale.set(haloScale, haloScale, 1);
+            }
+
+            // 星空微閃
+            if (starMat.opacity > 0.01) {
+                skyStars.rotation.y = timeSec * 0.012;
+            }
+
+            // 迎面飛來的衝擊感風雪更新
+            if (snowMat.opacity > 0.01) {
+                const snArr = snowGeo.attributes.position.array;
+                for (let i = 0; i < snowCount; i++) {
+                    snArr[i * 3] += (snowVel[i * 3] + Math.sin(timeSec * 1.5 + i) * 0.25) * dt;
+                    snArr[i * 3 + 1] += snowVel[i * 3 + 1] * dt;
+                    snArr[i * 3 + 2] += snowVel[i * 3 + 2] * dt;
+
+                    // 飛出鏡頭後方或落地後重置到遠處前方，持續迎面飛來
+                    if (snArr[i * 3 + 2] > 5.5 || snArr[i * 3 + 1] < 0) {
+                        snArr[i * 3] = (Math.random() - 0.5) * 14;
+                        snArr[i * 3 + 1] = 1.2 + Math.random() * 6.5;
+                        snArr[i * 3 + 2] = -9.5 - Math.random() * 4.5;
+                    }
+                }
+                snowGeo.attributes.position.needsUpdate = true;
+            }
+
+            // 馴鹿雪橇由右至左飛行與禮物空降
+            if (sleighActive) {
+                sleighProgress += dt * 0.22; // 約 4.5 秒飛越夜空
+                const sx = 4.6 - sleighProgress * 9.2; // 右 (+4.6) -> 左 (-4.6)
+                const sy = 2.25 + Math.sin(sleighProgress * Math.PI) * 0.35 + Math.sin(timeSec * 6) * 0.03;
+                const sz = -0.35 + Math.cos(sleighProgress * Math.PI) * 0.25;
+
+                santaSleigh.position.set(sx, sy, sz);
+                santaSleigh.rotation.z = Math.cos(sleighProgress * Math.PI) * 0.12;
+
+                // 馴鹿關節式奔跑擺動與頭部微點律動
+                santaSleigh.userData.reindeers.forEach((deer, dIdx) => {
+                    deer.position.y = Math.sin(timeSec * 11 + dIdx * 1.2) * 0.028;
+                    if (deer.userData.headGroup) {
+                        deer.userData.headGroup.rotation.z = Math.sin(timeSec * 11 + dIdx) * 0.08;
+                    }
+                    deer.userData.legs.forEach(legObj => {
+                        const swing = Math.sin(timeSec * 15 + legObj.phase);
+                        legObj.hip.rotation.z = swing * 0.58;
+                        legObj.knee.rotation.z = legObj.isFront
+                            ? Math.max(0, -swing) * 0.65
+                            : Math.max(0, swing) * 0.55;
+                    });
+                });
+
+                // 聖誕老人揮手致意動畫
+                if (santaSleigh.userData.santaRightArm) {
+                    santaSleigh.userData.santaRightArm.rotation.x = -0.35 + Math.sin(timeSec * 9) * 0.35;
+                }
+
+                // 沿途灑落金色星塵
+                emitStardust(sx + 0.35, sy - 0.02, sz, 3);
+
+                // 飛過聖誕樹上方區間時，分批落下 5 個禮物盒
+                const dropThresholds = [0.34, 0.41, 0.48, 0.55, 0.62];
+                if (giftsSpawnedInRun < dropThresholds.length && sleighProgress >= dropThresholds[giftsSpawnedInRun]) {
+                    spawnGiftFromSky(sx + 0.25, sy - 0.08, sz);
+                    giftsSpawnedInRun++;
+                }
+
+                if (sleighProgress >= 1.0) {
+                    sleighActive = false;
+                    santaSleigh.visible = false;
+                }
+            }
+
+            // 空降禮物飄落並平穩落在聖誕樹下
+            for (let i = fallingGifts.length - 1; i >= 0; i--) {
+                const fg = fallingGifts[i];
+                fg.progress += dt * 0.52;
+                const t = Math.min(1, fg.progress);
+                const easeY = t * t; // 重力加速下墜感
+
+                const curX = fg.startX + (fg.targetX - fg.startX) * t + Math.sin(timeSec * 4 + fg.swayOffset) * 0.08 * (1 - t);
+                const curZ = fg.startZ + (fg.targetZ - fg.startZ) * t + Math.cos(timeSec * 3.5 + fg.swayOffset) * 0.08 * (1 - t);
+                const targetY = fg.mesh.userData.halfH;
+                const curY = fg.startY + (targetY - fg.startY) * easeY;
+
+                fg.mesh.position.set(curX, curY, curZ);
+                fg.mesh.rotation.y += dt * 2.4 * (1 - t);
+                fg.mesh.rotation.x = Math.sin(timeSec * 5 + fg.swayOffset) * 0.22 * (1 - t);
+
+                // 禮物下落伴隨星塵
+                if (Math.random() > 0.45) {
+                    emitStardust(curX, curY + 0.06, curZ, 1);
+                }
+
+                if (t >= 1) {
+                    fg.mesh.position.set(fg.targetX, targetY, fg.targetZ);
+                    fg.mesh.rotation.set(0, Math.random() * Math.PI * 2, 0);
+                    landedGifts.push(fg.mesh);
+                    giftColliders.push(fg.mesh.userData.hitSphere);
+                    fallingGifts.splice(i, 1);
+                }
+            }
+
+            // 落地禮物微微上下律動提示可點擊
+            landedGifts.forEach(lg => {
+                const bob = Math.abs(Math.sin(timeSec * 2.6 + lg.userData.pulsePhase)) * 0.015;
+                lg.position.y = lg.userData.halfH + bob;
+            });
+
+            // 絢麗煙火與發光彩蛋動畫更新
+            for (let i = activeFireworks.length - 1; i >= 0; i--) {
+                const fw = activeFireworks[i];
+                fw.age += dt;
+                const lifeRatio = fw.age / fw.maxAge;
+
+                const posArr = fw.geo.attributes.position.array;
+                for (let p = 0; p < fw.velocities.length; p++) {
+                    const v = fw.velocities[p];
+                    posArr[p * 3] += v.vx * dt;
+                    posArr[p * 3 + 1] += v.vy * dt;
+                    posArr[p * 3 + 2] += v.vz * dt;
+
+                    // 空氣阻力與重力下墜拖尾
+                    v.vx *= 0.96;
+                    v.vy = v.vy * 0.96 - 1.65 * dt;
+                    v.vz *= 0.96;
+                }
+                fw.geo.attributes.position.needsUpdate = true;
+                fw.mat.opacity = Math.max(0, 1 - Math.pow(lifeRatio, 1.5));
+
+                // 驚喜彩蛋上升旋轉並淡出
+                fw.egg.position.y += dt * 0.65;
+                fw.egg.rotation.y += dt * 5.5;
+                fw.eggMat.opacity = Math.max(0, 1 - lifeRatio * 1.15);
+                fw.light.intensity = Math.max(0, 1.8 * (1 - lifeRatio * 1.6));
+
+                if (fw.age >= fw.maxAge) {
+                    scene.remove(fw.points);
+                    scene.remove(fw.egg);
+                    scene.remove(fw.light);
+                    fw.geo.dispose();
+                    fw.mat.dispose();
+                    fw.egg.geometry.dispose();
+                    fw.eggMat.dispose();
+                    activeFireworks.splice(i, 1);
+                }
+            }
+
+            // 金色星塵自然下沉與消散
+            const sdArr = stardustGeo.attributes.position.array;
+            let sdDirty = false;
+            for (let i = 0; i < stardustCount; i++) {
+                if (stardustLife[i] > 0) {
+                    stardustLife[i] -= dt * 0.95;
+                    sdArr[i * 3 + 1] -= dt * 0.28;
+                    if (stardustLife[i] <= 0) {
+                        sdArr[i * 3 + 1] = -20;
+                    }
+                    sdDirty = true;
+                }
+            }
+            if (sdDirty) stardustGeo.attributes.position.needsUpdate = true;
+
+            controls.update();
+            composer.render();
+        }
+
+        // RWD 視窗尺寸自適應
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            composer.setSize(w, h);
+            bloomPass.setSize(w, h);
+        });
+
+        // 啟動動畫迴圈
+        window.onload = function() {
+            animate(performance.now());
+        };
+    })();
+    </script>
+</body>
+</html>
